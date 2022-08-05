@@ -1,0 +1,14 @@
+version: "3.7"
+
+services:
+  paralel-service:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: client
+    command: yarn start
+    ports:
+      - '8080:8080'
+      - '3000:3000'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

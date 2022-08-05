@@ -1,0 +1,1 @@
+export { InputCheckVerifyCode } from './staff';
