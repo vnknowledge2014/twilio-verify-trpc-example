@@ -44,7 +44,7 @@ jobs:
           pwd
           echo "$AWS_EC2_PEM" > private_key && chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${AWS_EC2_PUBLIC_IP} '
-            cd project/twilio-verify-trpc-example
+            cd project/twilio-verify-trpc-example &&
             git checkout main &&
             git fetch --all &&
             git reset --hard origin/main &&
