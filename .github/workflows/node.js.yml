@@ -1,0 +1,56 @@
+name: CICD/Docker
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      
+jobs:
+  Build:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Create env file
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_API_KEY: ${{ secrets.TWILIO_AUTH_API_KEY }}
+          TWILIO_AUTH_API_SECRET_KEY: ${{ secrets.TWILIO_AUTH_API_SECRET_KEY }}
+          TWILIO_SERVICE_SID: ${{ secrets.TWILIO_SERVICE_SID }}
+        run:
+          touch .env
+          echo TWILIO_ACCOUNT_SID="$TWILIO_ACCOUNT_SID" >> ./.env
+          echo TWILIO_AUTH_API_KEY="$TWILIO_AUTH_API_KEY" >> ./.env
+          echo TWILIO_AUTH_API_SECRET_KEY="$TWILIO_AUTH_API_SECRET_KEY" >> ./.env
+          echo TWILIO_SERVICE_SID="$TWILIO_SERVICE_SID" >> ./.env
+        shell: bash
+      - name: Start containers
+        run: docker-compose up -d
+
+  Deployment:
+    needs: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Git pull
+        env:
+          AWS_EC2_PEM: ${{ secrets.AWS_EC2_PEM  }}
+          AWS_EC2_PUBLIC_IP: ${{ secrets.AWS_EC2_PUBLIC_IP }}
+        run: |
+          pwd
+          echo "$AWS_EC2_PEM" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${AWS_EC2_PUBLIC_IP} '
+            cd project/twilio-verify-trpc-example
+            git checkout main &&
+            git fetch --all &&
+            git reset --hard origin/main &&
+            git pull origin main &&
+            docker-compose up -d --build
+          '
+          
+        
+
